@@ -113,38 +113,40 @@ normal(Mean, Sigma) ->
     Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
 
 exp_rand() ->
+    A = 0.0,
     U = random:uniform(),
-    A = lists:nth(1, ?q),
+
     [UNew, ANew] = exp_rand_prepare(U, A),
-    UMin = random:uniform(),
 
-    exp_rand_sample(UNew, UMin, ANew).
-
-exp_rand_prepare(U, A) when U =< 1.0 ->
-    error_logger:info_msg("~p~n", ["prepare"]),
-    UNew = U + U,
-    ANew = A + lists:nth(1, ?q),
-    exp_rand_prepare(UNew, ANew);
-
-exp_rand_prepare(U, A) ->
-    [U-1.0, A].
-
-exp_rand_sample(U, UMin, A) ->
-    exp_rand_sample(U, UMin, A, 1).
-
-
-exp_rand_sample(U, UMin, A, Index) ->
-    UStar    = random:uniform(),
-    CurrentQ = lists:nth(Index, ?q),
-    if
-        U > CurrentQ ->
-            UMinNew = UStar,
-            exp_rand_sample(U, UMinNew, A, Index+1);
-        true ->
-            A + UMin * lists:nth(1, ?q)
+    case lists:nth(1, ?q) of
+        Q0 when UNew < Q0 ->
+            UNew + ANew;
+        Q0 ->
+            UMin = random:uniform(),
+            exp_rand_sample(UNew, UMin, ANew, Q0, ?q)
     end.
 
 
+exp_rand_prepare(U, A) ->
+    UNew = U + U,
+
+    if UNew > 1.0 -> [UNew - 1.0, A];
+        true      -> exp_rand_prepare(UNew, A + lists:nth(1, ?q))
+    end.
+
+
+exp_rand_sample(U, UMin, A, Q0, [Q|QRest]) when U > Q ->
+    error_logger:info_msg("~p", ["."]),
+    UStar = random:uniform(),
+
+    if
+        UMin > UStar -> exp_rand_sample(U, UStar, A, Q0, QRest);
+        true         -> exp_rand_sample(U, UMin,  A, Q0, QRest)
+    end;
+
+
+exp_rand_sample(_, UMin, A, Q0, _) ->
+    A + UMin * Q0.
 
 
 
