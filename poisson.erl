@@ -136,7 +136,6 @@ exp_rand_prepare(U, A) ->
 
 
 exp_rand_sample(U, UMin, A, Q0, [Q|QRest]) when U > Q ->
-    error_logger:info_msg("~p", ["."]),
     UStar = random:uniform(),
 
     if
