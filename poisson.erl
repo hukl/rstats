@@ -25,6 +25,7 @@
   0.9999999999999999,
   1.0000000000000000
 ]).
+-define(fact, [1.0, 1.0, 2.0, 6.0, 24.0, 120.0, 720.0, 5040.0, 40320.0, 362880.0]).
 
 
 rpois(Mu) ->
@@ -107,6 +108,11 @@ ceiling(X) ->
         false -> T + 1
     end.
 
+fsign(X, Y) when Y >= 0 ->
+    erlang:abs(X);
+fsign(X, Y) ->
+    -erlang:abs(X).
+
 normal(Mean, Sigma) ->
     Rv1 = random:uniform(),
     Rv2 = random:uniform(),
@@ -150,45 +156,6 @@ exp_rand_sample(_, UMin, A, _) ->
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 rpois_big(Mu) ->
     S    = math:sqrt(Mu),
     D    = 6.0 * Mu * Mu,
@@ -204,20 +171,20 @@ step_n(S, D, Mu, BigL) ->
         Pois = floor(G),
 
         if Pois >= BigL -> Pois;
-           true         -> step_s(S, D, Mu, Pois)
+           true         -> step_s(S, D, G, Mu, Pois)
         end
     end.
 
-step_s(S, D, Mu, Pois) ->
+step_s(S, D, G, Mu, Pois) ->
     Fk     = Pois,
     Difmuk = Mu - Fk,
     U      = random:uniform(),
 
     if (D * U) >= (Difmuk * Difmuk * Difmuk) -> Pois;
-       true                                  -> step_p(S, Mu)
+       true                                  -> step_p(S, G, Mu)
     end.
 
-step_p(S, Mu) ->
+step_p(S, G, Mu) ->
     error_logger:info_msg("~p~n", ["Step P"]),
     Omega = ?M_1_SQRT_2PI / S,
     % The quantities b1, b2, c3, c2, c1, c0 are for the Hermite
@@ -232,7 +199,12 @@ step_p(S, Mu) ->
     C  = 0.1069 / Mu,
     200.
 
+step_e() ->
+    ok.
 
+
+step_f() ->
+    ok.
 
 
 
