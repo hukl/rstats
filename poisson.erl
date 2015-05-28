@@ -6,7 +6,8 @@
 -define(one_7,        0.1428571428571428571).
 -define(one_12,       0.0833333333333333333).
 -define(one_24,       0.0416666666666666667).
--define(q, [
+-define(Q0,           0.6931471805599453).
+-define(Q, [
   0.6931471805599453,
   0.9333736875190459,
   0.9888777961838675,
@@ -118,12 +119,12 @@ exp_rand() ->
 
     [UNew, ANew] = exp_rand_prepare(U, A),
 
-    case lists:nth(1, ?q) of
-        Q0 when UNew < Q0 ->
+    if
+        UNew < ?Q0 ->
             UNew + ANew;
-        Q0 ->
+        true ->
             UMin = random:uniform(),
-            exp_rand_sample(UNew, UMin, ANew, Q0, ?q)
+            exp_rand_sample(UNew, UMin, ANew, ?Q)
     end.
 
 
@@ -131,21 +132,21 @@ exp_rand_prepare(U, A) ->
     UNew = U + U,
 
     if UNew > 1.0 -> [UNew - 1.0, A];
-        true      -> exp_rand_prepare(UNew, A + lists:nth(1, ?q))
+        true      -> exp_rand_prepare(UNew, A + ?Q0)
     end.
 
 
-exp_rand_sample(U, UMin, A, Q0, [Q|QRest]) when U > Q ->
+exp_rand_sample(U, UMin, A, [Q|QRest]) when U > Q ->
     UStar = random:uniform(),
 
     if
-        UMin > UStar -> exp_rand_sample(U, UStar, A, Q0, QRest);
-        true         -> exp_rand_sample(U, UMin,  A, Q0, QRest)
+        UMin > UStar -> exp_rand_sample(U, UStar, A, QRest);
+        true         -> exp_rand_sample(U, UMin,  A, QRest)
     end;
 
 
-exp_rand_sample(_, UMin, A, Q0, _) ->
-    A + UMin * Q0.
+exp_rand_sample(_, UMin, A, _) ->
+    A + UMin * ?Q0.
 
 
 
