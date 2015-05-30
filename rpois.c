@@ -214,8 +214,7 @@ double rpois(double mu)
             if (pois < 10) { /* use factorials from table fact[] */
               px = -mu;
               py = pow(mu, pois) / fact[(int)pois];
-            }
-            else {
+            } else {
               /* Case pois >= 10 uses polynomial approximation
               a0-a7 for accuracy when advisable */
               del = one_12 / fk;
