@@ -1,8 +1,28 @@
 -module(poisson).
 
--export([rpois/1, rpois_big/1, write_csv/1, write_floor_csv/1, normal/2, exp_rand/0]).
+-export([
+    rpois/1,
+    rpois_big/1,
+    write_csv/1,
+    write_floor_csv/1,
+    normal/2,
+    exp_rand/0,
+    floor/1,
+    ceiling/1,
+    fsign/2,
+    fact/1]).
 
 -define(M_1_SQRT_2PI, 0.398942280401432677939946059934).
+
+-define(a0, -0.5      ).
+-define(a1,  0.3333333).
+-define(a2, -0.2500068).
+-define(a3,  0.2000118).
+-define(a4, -0.1661269).
+-define(a5,  0.1421878).
+-define(a6, -0.1384794).
+-define(a7,  0.1250060).
+
 -define(one_7,        0.1428571428571428571).
 -define(one_12,       0.0833333333333333333).
 -define(one_24,       0.0416666666666666667).
@@ -110,8 +130,15 @@ ceiling(X) ->
 
 fsign(X, Y) when Y >= 0 ->
     erlang:abs(X);
-fsign(X, Y) ->
+fsign(X, _) ->
     -erlang:abs(X).
+
+
+fact(N) -> fact(N,1).
+
+fact(0,Acc) -> Acc;
+fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
+
 
 normal(Mean, Sigma) ->
     Rv1 = random:uniform(),
@@ -181,10 +208,10 @@ step_s(S, D, G, Mu, Pois) ->
     U      = random:uniform(),
 
     if (D * U) >= (Difmuk * Difmuk * Difmuk) -> Pois;
-       true                                  -> step_p(S, G, Mu)
+       true                                  -> step_p(Pois, S, G, Mu, Difmuk, Fk, U)
     end.
 
-step_p(S, G, Mu) ->
+step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
     error_logger:info_msg("~p~n", ["Step P"]),
     Omega = ?M_1_SQRT_2PI / S,
     % The quantities b1, b2, c3, c2, c1, c0 are for the Hermite
@@ -197,29 +224,86 @@ step_p(S, G, Mu) ->
     C1 = B1 - 6.0 * B2 + 45.0 * C3,
     C0 = 1.0 - B1 + 3.0 * B2 - 15.0 * C3,
     C  = 0.1069 / Mu,
-    200.
 
-step_e() ->
-    ok.
+    if
+        G >= 0.0 -> step_f1(Pois, Mu, Fk, Difmuk, nan, U, S, Omega, C, C0, C1, C2, C3);
+        true     -> step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3)
+    end.
 
-
-step_f() ->
-    ok.
-
-
-
-
-
+step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
+    E = exp_rand(),
+    U = 2 * random:uniform() - 1,
+    T = fsign(E, U),
+    step_f0(Pois, Mu, Fk, Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3).
 
 
+step_f0(_Pois, Mu, _Fk, _Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3) when -0.6744 < T ->
+    Pois   = floor(Mu + (S * T)),
+    Fk     = Pois,
+    Difmuk = Mu - Fk,
+    step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3);
 
 
+step_f0(Pois, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
+    Pois.
 
 
+step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3) ->
+    {Px, Py} = if
+        Pois < 10 ->
+            {-Mu, ( math:pow(Mu, Pois) / lists:nth(Pois, ?fact) )};
+        true ->
+            Del0  = ?one_12 / Fk,
+            Del1  = Del0 * (1.0 - 4.8 * Del0 * Del0),
+            V     = Difmuk / Fk,
+            FabsV = erlang:abs(V),
+
+            if
+                 FabsV =< 0.25 ->
+                    error_logger:info_msg("STEP SUB", []),
+                    PxTemp = Fk * V * V * (
+                        (
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                ?a7 * V + ?a6
+                                            ) * V + ?a5
+                                        ) * V + ?a4
+                                    ) * V + ?a3
+                                ) * V + ?a2
+                            ) * V + ?a1
+                        ) * V + ?a0
+                    ) - Del1,
+                    {PxTemp, 0.0};
+                true ->
+                    {
+                        Fk * math:log(1.0 + V) - Difmuk - Del1,
+                        ?M_1_SQRT_2PI / math:sqrt(Fk)
+                    }
+            end
+    end,
 
 
+    X0 = (0.5 - Difmuk) / S,
+    X1 = X0 * X0,
+    Fx = -0.5 * X1,
+    Fy = Omega * (((C3 * X1 + C2) * X1 + C1) * X1 + C0),
 
-
+    case E of
+        nan ->
+            error_logger:info_msg("~p~n", [{Fx, Fy, U, Px, Py}]),
+            case Fy - U * Fy =< Py * math:exp(Px - Fx) of
+                true -> Pois;
+                _    -> step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3)
+            end;
+        _ ->
+            case C * erlang:abs(U) =< Py * math:exp(Px + E) - Fy * math:exp(Fx + E) of
+                true -> Pois;
+                _    -> step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3)
+            end
+    end.
 
 
 
