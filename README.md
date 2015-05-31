@@ -1,7 +1,6 @@
 # Description
 
-The ```rstats``` module implements random sampling of the Poisson and exponential
-distribution. The algorithms are re-implemented from R's native C implementions which
+The ```rstats``` module implements random sampling of the Poisson (http://en.wikipedia.org/wiki/Poisson_distribution) and exponential distribution (http://en.wikipedia.org/wiki/Exponential_distribution). The algorithms are re-implemented from R's native C implementions which
 themselves are based on the following papers:
 
 Ahrens, J.H. and Dieter, U. (1982). Computer generation of Poisson deviates from modified normal distributions.
