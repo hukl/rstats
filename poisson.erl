@@ -140,19 +140,10 @@ step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
 
 
 step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
-    % E should be sampled from the exponential distribution as in the original
-    % C implementation but for some reason the results were off.
-    % After a lot of experimentation and comparing histograms it seems that
-    % using the uniform random number generator instead leads to results which
-    % are as close to the C implementation as they could be.
-    %
-    % I would still like to find out why that is.
-    %E = exp_rand(),
-    E = random:uniform(),
+    E = exp_rand(),
     U = (2 * random:uniform()) - 1.0,
     T = 1.8 + fsign(E, U),
     step_f0(Pois, Mu, Fk, Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3).
-
 
 
 step_f0(_Pois, Mu, _Fk, _Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3) when -0.6744 < T ->
@@ -161,8 +152,8 @@ step_f0(_Pois, Mu, _Fk, _Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3) when -0.6
     Difmuk = Mu - Fk,
     step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3);
 
-step_f0(Pois, _, _, _, _, _, _, _, _, _, _, _, _, _) ->
-    Pois.
+step_f0(Pois, Mu, Fk, Difmuk, _E, _U, S, _T, Omega, C, C0, C1, C2, C3) ->
+    step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3).
 
 
 step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3) ->
