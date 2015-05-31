@@ -1,11 +1,11 @@
--module(poisson).
+-module(rstats).
 
 -export([
     rpois/1,
     write_csv/1,
     write_floor_csv/1,
     normal/2,
-    exp_rand/0,
+    rexp/0,
     floor/1,
     ceiling/1,
     fsign/2,
@@ -140,7 +140,7 @@ step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
 
 
 step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
-    E = exp_rand(),
+    E = rexp(),
     U = (2 * random:uniform()) - 1.0,
     T = 1.8 + fsign(E, U),
     step_f0(Pois, Mu, Fk, Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3).
@@ -256,7 +256,7 @@ normal(Mean, Sigma) ->
     Rho = math:sqrt(-2 * math:log(1-Rv2)),
     Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
 
-exp_rand() ->
+rexp() ->
     A = 0.0,
     U = random:uniform(),
 
