@@ -46,6 +46,14 @@
 ]).
 -define(fact, [1.0, 1.0, 2.0, 6.0, 24.0, 120.0, 720.0, 5040.0, 40320.0, 362880.0]).
 
+% REFERENCE
+%
+% Ahrens, J.H. and Dieter, U. (1982).
+% Computer generation of Poisson deviates
+% from modified normal distributions.
+% ACM Trans. Math. Software 8, 163-179.
+%
+% Re-Implemented from R's nmath/rpois.c C Code
 
 rpois(Mu) when Mu < 10.0 ->
     M  = erlang:max(1, trunc(Mu)),
@@ -122,16 +130,13 @@ step_s(S, D, G, Mu, Pois) ->
 
 step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
     Omega = ?M_1_SQRT_2PI / S,
-    % The quantities b1, b2, c3, c2, c1, c0 are for the Hermite
-    % approximations to the discrete normal probabilities fk.
-
-    B1 = ?one_24 / Mu,
-    B2 = 0.3 * B1 * B1,
-    C3 = ?one_7 * B1 * B2,
-    C2 = B2 - 15.0 * C3,
-    C1 = B1 - 6.0 * B2 + 45.0 * C3,
-    C0 = 1.0 - B1 + 3.0 * B2 - 15.0 * C3,
-    C  = 0.1069 / Mu,
+    B1    = ?one_24 / Mu,
+    B2    = 0.3 * B1 * B1,
+    C3    = ?one_7 * B1 * B2,
+    C2    = B2 - 15.0 * C3,
+    C1    = B1 - 6.0 * B2 + 45.0 * C3,
+    C0    = 1.0 - B1 + 3.0 * B2 - 15.0 * C3,
+    C     = 0.1069 / Mu,
 
     if
         G >= 0.0 -> step_f1(Pois, Mu, Fk, Difmuk, nan, U, S, Omega, C, C0, C1, C2, C3);
@@ -198,63 +203,16 @@ step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3) ->
             end
     end.
 
-write_csv(Samples) ->
-    {ok, FD} = file:open("/tmp/esample", [write]),
-    StringSamples = string:join(
-        [integer_to_list(I) || I <- Samples],
-        "\n"
-    ),
 
-    io:fwrite(FD, "~s", [StringSamples]),
-    file:close(FD).
+% REFERENCE
+%
+% Ahrens, J.H. and Dieter, U. (1972).
+% Computer methods for sampling from the exponential and
+% normal distributions.
+% Comm. ACM, 15, 873-882.
+%
+% Re-Implemented from R's nmath/sexp.c C Code
 
-write_floor_csv(Samples) ->
-    {ok, FD} = file:open("/tmp/esample", [write]),
-    StringSamples = string:join(
-        [io_lib:format("~.9g", [I]) || I <- Samples],
-        "\n"
-    ),
-
-    io:fwrite(FD, "~s", [StringSamples]),
-    file:close(FD).
-
-
-floor(X) when X < 0 ->
-    T = trunc(X),
-    case X - T == 0 of
-        true -> T;
-        false -> T - 1
-    end;
-floor(X) ->
-    trunc(X).
-
-
-ceiling(X) when X < 0 ->
-    trunc(X);
-ceiling(X) ->
-    T = trunc(X),
-    case X - T == 0 of
-        true -> T;
-        false -> T + 1
-    end.
-
-fsign(X, Y) when Y >= 0 ->
-    erlang:abs(X);
-fsign(X, _) ->
-    -erlang:abs(X).
-
-
-fact(N) -> fact(N,1).
-
-fact(0,Acc) -> Acc;
-fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
-
-
-normal(Mean, Sigma) ->
-    Rv1 = random:uniform(),
-    Rv2 = random:uniform(),
-    Rho = math:sqrt(-2 * math:log(1-Rv2)),
-    Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
 
 rexp() ->
     A = 0.0,
@@ -291,4 +249,67 @@ exp_rand_sample(U, UMin, A, [Q|QRest]) when U > Q ->
 exp_rand_sample(_, UMin, A, _) ->
     A + UMin * ?Q0.
 
+
+% Normal Distribution / Box-Muller
+normal(Mean, Sigma) ->
+    Rv1 = random:uniform(),
+    Rv2 = random:uniform(),
+    Rho = math:sqrt(-2 * math:log(1-Rv2)),
+    Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
+
+
+% Helpers missing in Erlangs Standard Library
+
+floor(X) when X < 0 ->
+    T = trunc(X),
+    case X - T == 0 of
+        true -> T;
+        false -> T - 1
+    end;
+floor(X) ->
+    trunc(X).
+
+
+ceiling(X) when X < 0 ->
+    trunc(X);
+ceiling(X) ->
+    T = trunc(X),
+    case X - T == 0 of
+        true -> T;
+        false -> T + 1
+    end.
+
+fsign(X, Y) when Y >= 0 ->
+    erlang:abs(X);
+fsign(X, _) ->
+    -erlang:abs(X).
+
+
+fact(N) -> fact(N,1).
+
+fact(0,Acc) -> Acc;
+fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
+
+
+% Helpers for verifying / comparing results in R
+
+write_csv(Samples) ->
+    {ok, FD} = file:open("/tmp/esample", [write]),
+    StringSamples = string:join(
+        [integer_to_list(I) || I <- Samples],
+        "\n"
+    ),
+
+    io:fwrite(FD, "~s", [StringSamples]),
+    file:close(FD).
+
+write_floor_csv(Samples) ->
+    {ok, FD} = file:open("/tmp/esample", [write]),
+    StringSamples = string:join(
+        [io_lib:format("~.9g", [I]) || I <- Samples],
+        "\n"
+    ),
+
+    io:fwrite(FD, "~s", [StringSamples]),
+    file:close(FD).
 
