@@ -2,8 +2,8 @@
 
 -export([
     rpois/1,
-    write_csv/1,
-    write_floor_csv/1,
+    write_csv/2,
+    write_floor_csv/2,
     normal/2,
     rexp/0,
     floor/1,
@@ -293,8 +293,8 @@ fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
 
 % Helpers for verifying / comparing results in R
 
-write_csv(Samples) ->
-    {ok, FD} = file:open("/tmp/esample", [write]),
+write_csv(Path, Samples) ->
+    {ok, FD} = file:open(Path, [write]),
     StringSamples = string:join(
         [integer_to_list(I) || I <- Samples],
         "\n"
@@ -303,8 +303,8 @@ write_csv(Samples) ->
     io:fwrite(FD, "~s", [StringSamples]),
     file:close(FD).
 
-write_floor_csv(Samples) ->
-    {ok, FD} = file:open("/tmp/esample", [write]),
+write_floor_csv(Path, Samples) ->
+    {ok, FD} = file:open(Path, [write]),
     StringSamples = string:join(
         [io_lib:format("~.9g", [I]) || I <- Samples],
         "\n"
