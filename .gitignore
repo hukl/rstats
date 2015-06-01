@@ -1,2 +1,16 @@
-.DS_Store
+deps
+
+*.d
+*.c~
+*.o
+*.so
 *.beam
+*.plt
+*.app
+
+erl_crash.dump
+
+.eunit
+.concrete/DEV_MODE
+.rebar
+.dialyzer_plt

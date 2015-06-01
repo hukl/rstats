@@ -1,0 +1,4 @@
+{application, rstats, [
+    {description, "Random sampling of the Poisson and exponential distribution"},
+    {vsn, git}
+]}.
