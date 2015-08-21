@@ -1,7 +1,11 @@
 # Description
 
-The ```rstats``` module implements random sampling of the Poisson (http://en.wikipedia.org/wiki/Poisson_distribution), exponential distribution (http://en.wikipedia.org/wiki/Exponential_distribution),
-normal distribution (https://en.wikipedia.org/wiki/Normal_distribution) and weighted distribution also known as discrete probability distribution (https://en.wikipedia.org/wiki/Alias_method).
+The ```rstats``` module implements random sampling of:
+
+* Poisson distributions (http://en.wikipedia.org/wiki/Poisson_distribution)
+* Exponential distributions (http://en.wikipedia.org/wiki/Exponential_distribution),
+* Normal distributions (https://en.wikipedia.org/wiki/Normal_distribution)
+* Discrete probability distributions (https://en.wikipedia.org/wiki/Alias_method).
 
 The algorithms for sampling the poisson, exponential and normal distributions are re-implemented from R's native C implementions which
 themselves are based on the following papers:
