@@ -3,7 +3,7 @@
 -export([
     rpois/1,
     write_csv/2,
-    write_floor_csv/2,
+    write_float_csv/2,
     normal/2,
     rexp/0,
     walker_lookup_table/1,
@@ -335,20 +335,6 @@ walker_choice({walker_vectors, N, Keys, Inx, Prob}) ->
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 % Helpers missing in Erlangs Standard Library
 
 floor(X) when X < 0 ->
@@ -394,7 +380,7 @@ write_csv(Path, Samples) ->
     io:fwrite(FD, "~s", [StringSamples]),
     file:close(FD).
 
-write_floor_csv(Path, Samples) ->
+write_float_csv(Path, Samples) ->
     {ok, FD} = file:open(Path, [write]),
     StringSamples = string:join(
         [io_lib:format("~.9g", [I]) || I <- Samples],
