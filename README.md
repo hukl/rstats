@@ -1,6 +1,9 @@
 # Description
 
-The ```rstats``` module implements random sampling of the Poisson (http://en.wikipedia.org/wiki/Poisson_distribution) and exponential distribution (http://en.wikipedia.org/wiki/Exponential_distribution). The algorithms are re-implemented from R's native C implementions which
+The ```rstats``` module implements random sampling of the Poisson (http://en.wikipedia.org/wiki/Poisson_distribution), exponential distribution (http://en.wikipedia.org/wiki/Exponential_distribution),
+normal distribution (https://en.wikipedia.org/wiki/Normal_distribution) and weighted distribution also known as discrete probability distribution (https://en.wikipedia.org/wiki/Alias_method).
+
+The algorithms for sampling the poisson, exponential and normal distributions are re-implemented from R's native C implementions which
 themselves are based on the following papers:
 
 Ahrens, J.H. and Dieter, U. (1982). Computer generation of Poisson deviates from modified normal distributions.
@@ -10,6 +13,14 @@ and
 
 Ahrens, J.H. and Dieter, U. (1972). Computer methods for sampling from the exponential and normal distributions.
 Comm. ACM, 15, 873-882.
+
+The algorithm for sampling discrete probability distributions is based on the this paper:
+
+Walker, A. J. (1977). "An Efficient Method for Generating Discrete Random Variables with General Distributions".
+ACM Transactions on Mathematical Software 3 (3): 253
+
+and was implemented in Erlang by Sergey Prokhorov (See https://gist.github.com/seriyps/5593193 for original implementation)
+
 
 Besides that there are a few helper functions for generating CSV files to import them into R for
 comparison and validation as well as common copies of floor, ceiling, fsign and fact.
