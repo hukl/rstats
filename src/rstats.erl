@@ -6,6 +6,8 @@
     write_floor_csv/2,
     normal/2,
     rexp/0,
+    walker_lookup_table/1,
+    walker_choice/1,
     floor/1,
     ceiling/1,
     fsign/2,
@@ -256,6 +258,95 @@ normal(Mean, Sigma) ->
     Rv2 = random:uniform(),
     Rho = math:sqrt(-2 * math:log(1-Rv2)),
     Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
+
+
+
+% Walker alias method - efficient random selection with defined probabilities.
+% <http://en.wikipedia.org/wiki/Alias_method>
+%
+% > ProbabilityValueList = [{10, a}, {20, b}, {30, c}, {40, d}],
+% > WalkerVectors = walker_alias:build(ProbabilityValueList),
+% > RandomValue = walker_alias:choice(WalkerVectors).
+%
+% Probability values may be any integers
+% RandomValue will contain 'd' in 40% cases, 'c' in 30% and so on.
+% WalkerVectors is reusable struct - you can call choice/1 on it for many
+% times.
+%
+% Ported from Python implementation:
+% <http://code.activestate.com/recipes/576564-walkers-alias-method-for-random-objects-with-diffe/>
+% Other implementations:
+% Common Lisp: http://prxq.wordpress.com/2006/04/23/more-on-the-alias-method/
+% Ruby: https://github.com/cantino/walker_method
+% Created : 16 May 2013 by Sergey Prokhorov <me@seriyps.ru>
+%
+walker_lookup_table(WeightedList) ->
+    {Keys, Weights} = lists:unzip(WeightedList),
+    walker_lookup_table(Keys, Weights).
+
+
+walker_lookup_table(Keys, Weights) ->
+    N             = length(Weights),
+    Sumw          = lists:sum(Weights),
+    Prob          = [W * N / Sumw || W <- Weights],
+    {Short, Long} = split_short_long(Prob),
+    {Inx, Prob2}  = build_vectors(Short, Long, array:new(N), array:from_list(Prob)),
+
+    {walker_vectors, N, array:from_list(Keys), Inx, Prob2}.
+
+
+split_short_long(Probilities) ->
+    SplitFun = fun(Probability, {Sh, Lo, Index}) when Probability < 1 ->
+                       {[Index | Sh], Lo, Index + 1};
+                  (Probability, {Sh, Lo, Index}) when Probability >= 1 ->
+                       {Sh, [Index | Lo], Index + 1}
+               end,
+
+    {Short, Long, _} = lists:foldl(SplitFun, {[], [], 0}, Probilities),
+    {Short, Long}.
+
+
+build_vectors(S, L, Inx, Prob) when (S == []) orelse (L == []) ->
+    {Inx, Prob};
+
+build_vectors([J | Short], [K | Long], Inx, Prob) ->
+    NewInx   = array:set(J, K, Inx),
+    ProbJ    = array:get(J, Prob),
+    ProbK    = array:get(K, Prob),
+    NewProbK = ProbK - (1 - ProbJ),
+    NewProb  = array:set(K, NewProbK, Prob),
+
+    {NewShort, NewLong} = case NewProbK < 1 of
+        true  -> {[K | Short], Long};
+        false -> {Short, [K | Long]}
+    end,
+
+    build_vectors(NewShort, NewLong, NewInx, NewProb).
+
+
+walker_choice({walker_vectors, N, Keys, Inx, Prob}) ->
+    J = crypto:rand_uniform(0, N),
+    U = crypto:rand_uniform(0, 100) / 100,
+    Idx = case U =< array:get(J, Prob) of
+              true -> J;
+              false -> array:get(J, Inx)
+          end,
+    array:get(Idx, Keys).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 % Helpers missing in Erlangs Standard Library
