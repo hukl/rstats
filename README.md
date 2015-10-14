@@ -57,9 +57,9 @@ rexp(1000000)
 results <- read.table("/tmp/samples.csv")
 
 # Analyze Samples
-mean(results(1:1000000, 1))
-sd(results(1:1000000, 1))
-plot(hist(results(1:1000000, 1)))
+mean(results[1:1000000, 1])
+sd(results[1:1000000, 1])
+plot(hist(results[1:1000000, 1]))
 
 # Compare with native implementation
 plot(hist(rpois(1000000, 20.0)))
