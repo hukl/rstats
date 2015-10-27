@@ -8,6 +8,8 @@
     rexp/0,
     walker_lookup_table/1,
     walker_choice/1,
+    ewa/2,
+    ewa_next_state/3,
     floor/1,
     ceiling/1,
     fsign/2,
@@ -333,6 +335,20 @@ walker_choice({walker_vectors, N, Keys, Inx, Prob}) ->
           end,
     array:get(Idx, Keys).
 
+
+
+% Exponentially Weighted Moving Average
+% https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+% Implementation by Florian Odronitz
+
+ewa([First | List], Alpha) ->
+   lists:foldl(fun(Value, State) -> ewa_next_state(Value, Alpha, State) end, ewa_first_state(First), List).
+
+ewa_first_state(Value) ->
+   Value.
+
+ewa_next_state(Value, Alpha, State) ->
+   (1 - Alpha) * Value + Alpha * State.
 
 
 % Helpers missing in Erlangs Standard Library
