@@ -347,6 +347,8 @@ ewa(Alpha, AlphaI, [Head|Tail], Acc) ->
     NewAcc = Alpha * Head + AlphaI * Acc,
     ewa(Alpha, AlphaI, Tail, NewAcc).
 
+ewa_next_state(Value, Alpha, State) ->
+    Alpha * Value + (1 - Alpha) * State.
 
 
 % Helpers missing in Erlangs Standard Library
