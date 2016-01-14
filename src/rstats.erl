@@ -9,7 +9,6 @@
     walker_lookup_table/1,
     walker_choice/1,
     ewa/2,
-    ewa_next_state/3,
     floor/1,
     ceiling/1,
     fsign/2,
