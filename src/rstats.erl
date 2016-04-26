@@ -5,7 +5,8 @@
     write_csv/2,
     write_float_csv/2,
     normal/2,
-    rexp/0,
+    exp_rand/0,
+    rexp/1,
     walker_lookup_table/1,
     walker_choice/1,
     ewa/2,
@@ -16,7 +17,8 @@
     fact/1,
     dnorm/1,
     dnorm/2,
-    dnorm/3]).
+    dnorm/3,
+    rtruncnorm/5]).
 
 -define(M_1_SQRT_2PI, 0.398942280401432677939946059934).
 
@@ -58,6 +60,12 @@
 -define(DBL_MANT_DIG, 16).
 
 -define(DBL_MIN_EXP, -999).
+
+
+-define(t1, 0.15).
+-define(t2, 2.18).
+-define(t3, 0.725).
+-define(t4, 0.45).
 
 % REFERENCE
 %
@@ -158,7 +166,7 @@ step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
 
 
 step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
-    E = rexp(),
+    E = exp_rand(),
     U = (2 * random:uniform()) - 1.0,
     T = 1.8 + fsign(E, U),
     step_f0(Pois, Mu, Fk, Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3).
@@ -226,8 +234,8 @@ step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3) ->
 %
 % Re-Implemented from R's nmath/sexp.c C Code
 
-
-rexp() ->
+% Random variates from the standard exponential distribution
+exp_rand() ->
     A = 0.0,
     U = random:uniform(),
 
@@ -263,6 +271,11 @@ exp_rand_sample(_, UMin, A, _) ->
     A + UMin * ?Q0.
 
 
+% Random variates from the exponential distribution
+rexp(Scale) when 0 < Scale ->
+    Scale * exp_rand().
+
+
 % Normal Distribution / Box-Muller
 normal(Mean, Sigma) ->
     Rv1 = random:uniform(),
@@ -272,7 +285,7 @@ normal(Mean, Sigma) ->
 
 
 
-
+% Compute the density of the normal distribution.
 dnorm(X) ->
     % (x, mean, sigma)
     dnorm(X, 0, 1).
@@ -305,6 +318,161 @@ do_dnorm(X, Sigma) ->
             X2 = X - X1,
             ?M_1_SQRT_2PI / Sigma * ( math:exp(-0.5 * X1 * X1) * math:exp( (-0.5 * X2 - X1) * X2 ) )
     end.
+
+
+
+
+
+ers_a_inf(A) ->
+    Ainv = 1.0 / A,
+    ers_a_inf(Ainv, A).
+
+ers_a_inf(Ainv, A) ->
+    X   = rexp(Ainv) + A,
+    Rho = math:exp(-0.5 * math:pow((X - A), 2)),
+    R   = crypto:rand_uniform(0, 1),
+
+    case R > Rho of
+        true -> ers_a_inf(Ainv, A);
+        _    -> X
+    end.
+
+
+ers_a_b(A, B) ->
+    Ainv = 1.0 / A,
+    ers_a_b(Ainv, A, B).
+
+ers_a_b(Ainv, A, B) ->
+    X   = rexp(Ainv) + A,
+    Rho = math:exp(-0.5 * math:pow((X - A), 2)),
+    R   = crypto:rand_uniform(0, 1),
+
+    case (R > Rho) orelse (X > B) of
+        true -> ers_a_b(Ainv, A, B);
+        _    -> X
+    end.
+
+
+
+nrs_a_inf(A) ->
+    X = normal(0, 1),
+
+    case X < A of
+        true -> nrs_a_inf(A);
+        _    -> X
+    end.
+
+
+nrs_a_b(A, B) ->
+    X = normal(0, 1),
+
+    case (X < A) orelse (X > B) of
+        true -> nrs_a_b(A, B);
+        _    -> X
+    end.
+
+
+hnrs_a_b(A, B) ->
+    X1 = normal(0, 1),
+    X2 = erlang:abs(X1),
+
+    case (X2 < A) orelse (X2 > B) of
+        true -> hnrs_a_b(A, B);
+        _    -> X2
+    end.
+
+
+urs_a_b(A, B) ->
+    Phi_a = dnorm(A, 0.0, 1.0),
+
+    Ub = case (A < 0) andalso (B > 0) of
+        true -> ?M_1_SQRT_2PI;
+        _    -> Phi_a
+    end,
+
+    do_urs_a_b(A, B, Ub, Phi_a).
+
+do_urs_a_b(A, B, Ub, Phi_a) ->
+    X = crypto:rand_uniform(A, B),
+
+    case crypto:rand_uniform(0, 1) * Ub > dnorm(X, 0, 1) of
+        true -> do_urs_a_b(A, B, Ub, Phi_a);
+        _    -> X
+    end.
+
+
+r_lefttruncnorm(A, Mean, Sd) ->
+    Alpha = (A - Mean) / Sd,
+
+    case Alpha < ?t4 of
+        true -> Mean + Sd * nrs_a_inf(Alpha);
+        _    -> Mean + Sd * ers_a_inf(Alpha)
+    end.
+
+
+r_righttruncnorm(B, Mean, Sd) ->
+    Beta = (B - Mean) / Sd,
+    Mean - Sd * r_lefttruncnorm(-Beta, 0.0, 1.0).
+
+
+
+% NOTE: if something is not right check if runif is really crypto:rand_uniform
+r_truncnorm(A, B, Mean, Sd) ->
+    Alpha = (A - Mean) / Sd,
+    Beta = (B - Mean) / Sd,
+
+    Phi_a = dnorm(Alpha, 0.0, 1.0),
+    Phi_b = dnorm(Beta, 0.0, 1.0),
+
+    if
+        Beta =< Alpha ->
+            {error, na_real};
+        (Alpha =< 0) andalso (0 =< Beta) ->
+            if
+                (Phi_a =< ?t1) orelse (Phi_b =< ?t1) ->
+                    Mean + Sd * nrs_a_b(Alpha, Beta);
+                true ->
+                    Mean + Sd * urs_a_b(Alpha, Beta)
+            end;
+        Alpha > 0 ->
+            if
+                (Phi_a / Phi_b =< ?t2) ->
+                    Mean + Sd * urs_a_b(Alpha, Beta);
+                true ->
+                    if
+                        Alpha < ?t3 ->
+                            Mean + Sd * hnrs_a_b(Alpha, Beta);
+                        true ->
+                            Mean + Sd * ers_a_b(Alpha, Beta)
+                    end
+            end;
+        true ->
+            if
+                Phi_b / Phi_a =< ?t2 ->
+                    Mean - Sd * urs_a_b(-Beta, -Alpha);
+                true ->
+                    if
+                        Beta > -(?t3) ->
+                            Mean - Sd * hnrs_a_b(-Beta, -Alpha);
+                        true ->
+                            Mean - Sd * ers_a_b(-Beta, -Alpha)
+                    end
+            end
+    end.
+
+
+% Truncated normal distribution
+rtruncnorm(N, infinity, infinity, Mean, Sd) ->
+    [normal(Mean, Sd) || _ <- lists:seq(1, N)];
+
+rtruncnorm(N, infinity, B, Mean, Sd) ->
+    [r_righttruncnorm(B, Mean, Sd) || _ <- lists:seq(1, N)];
+
+rtruncnorm(N, A, infinity, Mean, Sd) ->
+    [r_lefttruncnorm(A, Mean, Sd)  || _ <- lists:seq(1, N)];
+
+rtruncnorm(N, A, B, Mean, Sd) ->
+    [r_truncnorm(A, B, Mean, Sd)  || _ <- lists:seq(1, N)].
 
 
 % Walker alias method - efficient random selection with defined probabilities.
