@@ -34,15 +34,16 @@ comparison and validation as well as common copies of floor, ceiling, fsign and 
 ### Usage
 
 ```erlang
-rstats:rpois(Lamda)                        % returns random sample from Poisson distribution
-rstats:exp_rand()                          % returns random sample from Exponential Distribution
-rstats:rexp(Scale)                         % returns scaled random sample from Exponential Distribution
-rstats:normal(Mean, Sigma)                 % returns random sample from Normal Distribution
-rstats:rtruncnormal(N, Min, Max, Mean, Sd) % returns N sample from truncated normal distribution
-                                           % instead of Min/Max you can use the atom infinity
-                                           % if both are infinity, the regular normal distribution is sampled
-rstats:dnorm(X, Mean, Sd)                         % Compute density of the normal distribution
-
+rstats:rpois(Lamda)                            % returns random sample from Poisson distribution
+rstats:exp_rand()                              % returns random sample from Exponential Distribution
+rstats:rexp(Scale)                             % returns scaled random sample from Exponential Distribution
+rstats:normal(Mean, Sigma)                     % returns random sample from Normal Distribution
+rstats:rtruncnormal(N, Min, Max, Mean, Sd)     % returns N sample from truncated normal distribution
+                                               % instead of Min/Max you can use the atom infinity
+                                               % if both are infinity, the regular normal distribution is sampled
+rstats:dnorm(X, Mean, Sd)                      % Compute density of the normal distribution
+rstats:walker_lookup_table([{Key, Weight}, …]) % Create Walker Choice Lookup Table
+rstats:walker_choice(LookupTable)              % Draw random sample from weighted distribution
 ```
 
 ### Create Large Samples
