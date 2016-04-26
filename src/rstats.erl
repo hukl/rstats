@@ -461,6 +461,8 @@ r_truncnorm(A, B, Mean, Sd) ->
 
 
 % Truncated normal distribution
+% Implemented after https://cran.r-project.org/web/packages/truncnorm
+
 rtruncnorm(N, infinity, infinity, Mean, Sd) ->
     [normal(Mean, Sd) || _ <- lists:seq(1, N)];
 
