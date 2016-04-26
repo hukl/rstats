@@ -322,7 +322,7 @@ do_dnorm(X, Sigma) ->
 
 
 
-
+% Helper functions for truncated normal distribution
 ers_a_inf(A) ->
     Ainv = 1.0 / A,
     ers_a_inf(Ainv, A).
@@ -416,7 +416,6 @@ r_righttruncnorm(B, Mean, Sd) ->
 
 
 
-% NOTE: if something is not right check if runif is really crypto:rand_uniform
 r_truncnorm(A, B, Mean, Sd) ->
     Alpha = (A - Mean) / Sd,
     Beta = (B - Mean) / Sd,
