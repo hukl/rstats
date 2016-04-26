@@ -1,6 +1,6 @@
 # Description
 
-The ```rstats``` module implements random sampling of:
+The Erlang ```rstats``` module implements random sampling of:
 
 * Poisson distributions (http://en.wikipedia.org/wiki/Poisson_distribution)
 * Exponential distributions (http://en.wikipedia.org/wiki/Exponential_distribution),
