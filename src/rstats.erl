@@ -13,7 +13,10 @@
     floor/1,
     ceiling/1,
     fsign/2,
-    fact/1]).
+    fact/1,
+    dnorm/1,
+    dnorm/2,
+    dnorm/3]).
 
 -define(M_1_SQRT_2PI, 0.398942280401432677939946059934).
 
@@ -49,6 +52,12 @@
   1.0000000000000000
 ]).
 -define(fact, [1.0, 1.0, 2.0, 6.0, 24.0, 120.0, 720.0, 5040.0, 40320.0, 362880.0]).
+
+-define(M_LN2, 0.693147180559945309417232121458).
+
+-define(DBL_MANT_DIG, 16).
+
+-define(DBL_MIN_EXP, -999).
 
 % REFERENCE
 %
@@ -263,6 +272,41 @@ normal(Mean, Sigma) ->
 
 
 
+
+dnorm(X) ->
+    % (x, mean, sigma)
+    dnorm(X, 0, 1).
+
+dnorm(X, Mean) ->
+    dnorm(X, Mean, 1).
+
+dnorm(_X, _Mean, Sigma) when Sigma =< 0 ->
+    {error, not_a_number};
+
+dnorm(X, Mean, Sigma) ->
+    X1 = (X - Mean) / Sigma,
+
+    X2 = erlang:abs(X1),
+
+    do_dnorm(X2, Sigma).
+
+do_dnorm(X, Sigma) when X < 5 ->
+    ?M_1_SQRT_2PI * math:exp(-0.5 * X * X) / Sigma;
+
+do_dnorm(X, Sigma) ->
+    case (X > math:sqrt(-2 * ?M_LN2 * (?DBL_MIN_EXP + 1 - ?DBL_MANT_DIG))) of
+        true ->
+            0.0;
+        false ->
+            X1 = ldexp(
+                trunc(ldexp(X, 16)), -16
+            ),
+
+            X2 = X - X1,
+            ?M_1_SQRT_2PI / Sigma * ( math:exp(-0.5 * X1 * X1) * math:exp( (-0.5 * X2 - X1) * X2 ) )
+    end.
+
+
 % Walker alias method - efficient random selection with defined probabilities.
 % <http://en.wikipedia.org/wiki/Alias_method>
 %
@@ -350,7 +394,6 @@ ewa(Alpha, AlphaI, [Head|Tail], Acc) ->
 ewa_next_state(Value, Alpha, State) ->
     Alpha * Value + (1 - Alpha) * State.
 
-
 % Helpers missing in Erlangs Standard Library
 
 floor(X) when X < 0 ->
@@ -382,6 +425,10 @@ fact(N) -> fact(N,1).
 
 fact(0,Acc) -> Acc;
 fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
+
+
+ldexp(X, Exponent) ->
+    X * math:pow(2, Exponent).
 
 
 % Helpers for verifying / comparing results in R
