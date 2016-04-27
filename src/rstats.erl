@@ -1,11 +1,12 @@
 -module(rstats).
 
 -export([
+    seed/0,
     rpois/1,
     write_csv/2,
     write_float_csv/2,
-    normal/2,
-    exp_rand/0,
+    rnormal/2,
+    rexp/0,
     rexp/1,
     walker_lookup_table/1,
     walker_choice/1,
@@ -18,7 +19,8 @@
     dnorm/1,
     dnorm/2,
     dnorm/3,
-    rtruncnorm/5]).
+    rtruncnorm/5,
+    random_uniform/3]).
 
 -define(M_1_SQRT_2PI, 0.398942280401432677939946059934).
 
@@ -79,7 +81,7 @@
 rpois(Mu) when Mu < 10.0 ->
     M  = erlang:max(1, trunc(Mu)),
     Q  = P0 = P = math:exp(-Mu),
-    U  = random:uniform(),
+    U  = rand:uniform(),
     PP = [],
     if U =< P0 -> 0;
        true    -> step_c(1, U, M, Mu, P, PP, Q)
@@ -94,7 +96,7 @@ rpois(Mu) ->
 
 
 step_u(M, PP) ->
-    U  = random:uniform(),
+    U  = rand:uniform(),
     MinStart = case U =< 0.458 of
         true -> 1;
         _    -> erlang:min(35, M)
@@ -126,7 +128,7 @@ step_c(K, U, M, Mu, P, PP, Q) ->
 
 
 step_n(S, D, Mu, BigL) ->
-    G = Mu + (S * normal(0, 1)),
+    G = Mu + (S * rnormal(0, 1)),
 
     Pois = if
         G >= 0.0 -> floor(G);
@@ -142,7 +144,7 @@ step_n(S, D, Mu, BigL) ->
 step_s(S, D, G, Mu, Pois) ->
     Fk     = Pois,
     Difmuk = Mu - Fk,
-    U      = random:uniform(),
+    U      = rand:uniform(),
 
     if (D * U) >= (Difmuk * Difmuk * Difmuk) -> Pois;
        true                                  -> step_p(Pois, S, G, Mu, Difmuk, Fk, U)
@@ -166,8 +168,8 @@ step_p(Pois, S, G, Mu, Difmuk, Fk, U) ->
 
 
 step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
-    E = exp_rand(),
-    U = (2 * random:uniform()) - 1.0,
+    E = rexp(),
+    U = (2 * rand:uniform()) - 1.0,
     T = 1.8 + fsign(E, U),
     step_f0(Pois, Mu, Fk, Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3).
 
@@ -235,9 +237,9 @@ step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3) ->
 % Re-Implemented from R's nmath/sexp.c C Code
 
 % Random variates from the standard exponential distribution
-exp_rand() ->
+rexp() ->
     A = 0.0,
-    U = random:uniform(),
+    U = rand:uniform(),
 
     [UNew, ANew] = exp_rand_prepare(U, A),
 
@@ -245,9 +247,13 @@ exp_rand() ->
         UNew < ?Q0 ->
             UNew + ANew;
         true ->
-            UMin = random:uniform(),
+            UMin = rand:uniform(),
             exp_rand_sample(UNew, UMin, ANew, ?Q)
     end.
+
+
+rexp(Scale) when 0 < Scale ->
+    Scale * rexp().
 
 
 exp_rand_prepare(U, A) ->
@@ -259,7 +265,7 @@ exp_rand_prepare(U, A) ->
 
 
 exp_rand_sample(U, UMin, A, [Q|QRest]) when U > Q ->
-    UStar = random:uniform(),
+    UStar = rand:uniform(),
 
     if
         UMin > UStar -> exp_rand_sample(U, UStar, A, QRest);
@@ -271,15 +277,10 @@ exp_rand_sample(_, UMin, A, _) ->
     A + UMin * ?Q0.
 
 
-% Random variates from the exponential distribution
-rexp(Scale) when 0 < Scale ->
-    Scale * exp_rand().
-
-
 % Normal Distribution / Box-Muller
-normal(Mean, Sigma) ->
-    Rv1 = random:uniform(),
-    Rv2 = random:uniform(),
+rnormal(Mean, Sigma) ->
+    Rv1 = rand:uniform(),
+    Rv2 = rand:uniform(),
     Rho = math:sqrt(-2 * math:log(1-Rv2)),
     Rho * math:cos(2 * math:pi() * Rv1) * Sigma + Mean.
 
@@ -330,7 +331,7 @@ ers_a_inf(A) ->
 ers_a_inf(Ainv, A) ->
     X   = rexp(Ainv) + A,
     Rho = math:exp(-0.5 * math:pow((X - A), 2)),
-    R   = crypto:rand_uniform(0, 1),
+    R   = rand:uniform(),
 
     case R > Rho of
         true -> ers_a_inf(Ainv, A);
@@ -345,7 +346,7 @@ ers_a_b(A, B) ->
 ers_a_b(Ainv, A, B) ->
     X   = rexp(Ainv) + A,
     Rho = math:exp(-0.5 * math:pow((X - A), 2)),
-    R   = crypto:rand_uniform(0, 1),
+    R   = rand:uniform(),
 
     case (R > Rho) orelse (X > B) of
         true -> ers_a_b(Ainv, A, B);
@@ -355,7 +356,7 @@ ers_a_b(Ainv, A, B) ->
 
 
 nrs_a_inf(A) ->
-    X = normal(0, 1),
+    X = rnormal(0, 1),
 
     case X < A of
         true -> nrs_a_inf(A);
@@ -364,7 +365,7 @@ nrs_a_inf(A) ->
 
 
 nrs_a_b(A, B) ->
-    X = normal(0, 1),
+    X = rnormal(0, 1),
 
     case (X < A) orelse (X > B) of
         true -> nrs_a_b(A, B);
@@ -373,7 +374,7 @@ nrs_a_b(A, B) ->
 
 
 hnrs_a_b(A, B) ->
-    X1 = normal(0, 1),
+    X1 = rnormal(0, 1),
     X2 = erlang:abs(X1),
 
     case (X2 < A) orelse (X2 > B) of
@@ -395,7 +396,7 @@ urs_a_b(A, B) ->
 do_urs_a_b(A, B, Ub, Phi_a) ->
     X = crypto:rand_uniform(A, B),
 
-    case crypto:rand_uniform(0, 1) * Ub > dnorm(X, 0, 1) of
+    case rand:uniform() * Ub > dnorm(X, 0, 1) of
         true -> do_urs_a_b(A, B, Ub, Phi_a);
         _    -> X
     end.
@@ -464,7 +465,7 @@ r_truncnorm(A, B, Mean, Sd) ->
 % Implemented after https://cran.r-project.org/web/packages/truncnorm
 
 rtruncnorm(N, infinity, infinity, Mean, Sd) ->
-    [normal(Mean, Sd) || _ <- lists:seq(1, N)];
+    [rnormal(Mean, Sd) || _ <- lists:seq(1, N)];
 
 rtruncnorm(N, infinity, B, Mean, Sd) ->
     [r_righttruncnorm(B, Mean, Sd) || _ <- lists:seq(1, N)];
@@ -564,6 +565,9 @@ ewa_next_state(Value, Alpha, State) ->
     Alpha * Value + (1 - Alpha) * State.
 
 % Helpers missing in Erlangs Standard Library
+seed() ->
+    rand:seed(exs1024).
+
 
 floor(X) when X < 0 ->
     T = trunc(X),
@@ -600,8 +604,19 @@ ldexp(X, Exponent) ->
     X * math:pow(2, Exponent).
 
 
-% Helpers for verifying / comparing results in R
+random_uniform(N, Min, Max) when Min < Max ->
+    State = rand:seed_s(exsplus),
+    random_uniform(N, Min, Max, State, []).
 
+random_uniform(0, _Min, _Max, _State, Acc) ->
+    Acc;
+
+random_uniform(N, Min, Max, State, Acc) when Min < Max ->
+    {I, NewState} = rand:uniform_s(Max - Min + 1, State),
+    random_uniform(N-1, Min, Max, NewState, [(I + Min - 1)|Acc]).
+
+
+% Helpers for verifying / comparing results in R
 write_csv(Path, Samples) ->
     {ok, FD} = file:open(Path, [write]),
     StringSamples = string:join(
