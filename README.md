@@ -26,6 +26,8 @@ ACM Transactions on Mathematical Software 3 (3): 253
 
 and was implemented in Erlang by Sergey Prokhorov (See https://gist.github.com/seriyps/5593193 for original implementation)
 
+The sampling of the truncated normal distribution is a re-implementation of the CRAN package truncnormal (https://cran.r-project.org/web/packages/truncnorm/index.html)
+The C code is included in the reference folder.
 
 Besides that there are a few helper functions for generating CSV files to import them into R for
 comparison and validation as well as common copies of floor, ceiling, fsign and fact.
@@ -35,13 +37,14 @@ comparison and validation as well as common copies of floor, ceiling, fsign and 
 
 ```erlang
 rstats:rpois(Lamda)                            % returns random sample from Poisson distribution
-rstats:exp_rand()                              % returns random sample from Exponential Distribution
+rstats:rexp()                                  % returns random sample from Exponential Distribution
 rstats:rexp(Scale)                             % returns scaled random sample from Exponential Distribution
-rstats:normal(Mean, Sigma)                     % returns random sample from Normal Distribution
+rstats:rnormal(Mean, Sigma)                    % returns random sample from Normal Distribution
 rstats:rtruncnormal(N, Min, Max, Mean, Sd)     % returns N sample from truncated normal distribution
                                                % instead of Min/Max you can use the atom infinity
                                                % if both are infinity, the regular normal distribution is sampled
 rstats:dnorm(X, Mean, Sd)                      % Compute density of the normal distribution
+rstats:random_uniform(N, Min, Max)             % Returns N samples of uniform distribution within range (fast)
 rstats:walker_lookup_table([{Key, Weight}, …]) % Create Walker Choice Lookup Table
 rstats:walker_choice(LookupTable)              % Draw random sample from weighted distribution
 ```
@@ -53,6 +56,7 @@ rstats:write_csv("/tmp/samples.csv", [rstats:rpois(32.0) || _ <- lists:seq(1,100
 
 rstats:write_float_csv("/tmp/samples.csv", [rstats:rexp()) || _ <- lists:seq(1,1000000)]).
 
+rstats:write_float_csv("/tmp/samples.csv", rstats:rtruncnormal(1000000, 1, 23, 7, 3)).
 ```
 
 #### Analyze Data in R with:
@@ -61,6 +65,11 @@ rstats:write_float_csv("/tmp/samples.csv", [rstats:rexp()) || _ <- lists:seq(1,1
 # Native Implementation
 rpois(1000000, 20.0)
 rexp(1000000)
+
+# Truncated Normal Distribution in R
+install.packages('truncnormal')
+library(truncnormal)
+rtruncnorm(100, a=-1, b=5, mean=3, sd=2)
 
 # Read CSV
 results <- read.table("/tmp/samples.csv")
