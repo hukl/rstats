@@ -67,8 +67,8 @@ rpois(1000000, 20.0)
 rexp(1000000)
 
 # Truncated Normal Distribution in R
-install.packages('truncnormal')
-library(truncnormal)
+install.packages('truncnorm')
+library(truncnorm)
 rtruncnorm(100, a=-1, b=5, mean=3, sd=2)
 
 # Read CSV
