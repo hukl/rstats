@@ -20,7 +20,10 @@
     dnorm/2,
     dnorm/3,
     rtruncnorm/5,
-    random_uniform/3]).
+    random_uniform/2,
+    random_uniform/3,
+    random_uniform_integer/2,
+    random_uniform_integer/3]).
 
 -define(M_1_SQRT_2PI, 0.398942280401432677939946059934).
 
@@ -394,7 +397,7 @@ urs_a_b(A, B) ->
     do_urs_a_b(A, B, Ub, Phi_a).
 
 do_urs_a_b(A, B, Ub, Phi_a) ->
-    X = crypto:rand_uniform(A, B),
+    X = random_uniform(A, B),
 
     case rand:uniform() * Ub > dnorm(X, 0, 1) of
         true -> do_urs_a_b(A, B, Ub, Phi_a);
@@ -603,6 +606,9 @@ fact(N,Acc) when N > 0 -> fact(N-1,N*Acc).
 ldexp(X, Exponent) ->
     X * math:pow(2, Exponent).
 
+random_uniform(Min, Max) ->
+    [Number] = random_uniform(1, Min, Max),
+    Number.
 
 random_uniform(N, Min, Max) when Min < Max ->
     State = rand:seed_s(exsplus),
@@ -612,8 +618,25 @@ random_uniform(0, _Min, _Max, _State, Acc) ->
     Acc;
 
 random_uniform(N, Min, Max, State, Acc) when Min < Max ->
-    {I, NewState} = rand:uniform_s(Max - Min + 1, State),
-    random_uniform(N-1, Min, Max, NewState, [(I + Min - 1)|Acc]).
+    {RandomNumber, NewState} = rand:uniform_s(State),
+    Sample = Min + (Max - Min) * RandomNumber,
+    random_uniform(N-1, Min, Max, NewState, [Sample|Acc]).
+
+
+random_uniform_integer(Min, Max) ->
+    [Number] = random_uniform_integer(1, Min, Max),
+    Number.
+
+random_uniform_integer(N, Min, Max) when Min < Max ->
+    State = rand:seed_s(exsplus),
+    random_uniform_integer(N, Min, Max, State, []).
+
+random_uniform_integer(0, _Min, _Max, _State, Acc) ->
+    Acc;
+
+random_uniform_integer(N, Min, Max, State, Acc) ->
+    {RandomNumber, NewState} = rand:uniform_s((Max) - (Min-1),State),
+    random_uniform_integer(N-1, Min, Max, NewState, [(RandomNumber + Min - 1)|Acc]).
 
 
 % Helpers for verifying / comparing results in R
