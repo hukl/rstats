@@ -90,6 +90,9 @@ plot(hist(rexp(1000000)))
 # Look at numbers / occurrences instead of Histograms
 table(unlist(results[1:1000000, 1]))
 
+# Plot Bar Graphs
+barplot(table(results[1:1000000, 1]))
+
 ```
 
 # NOTE
