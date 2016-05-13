@@ -86,6 +86,10 @@ plot(hist(results[1:1000000, 1]))
 # Compare with native implementation
 plot(hist(rpois(1000000, 20.0)))
 plot(hist(rexp(1000000)))
+
+# Look at numbers / occurrences instead of Histograms
+table(unlist(results[1:1000000, 1]))
+
 ```
 
 # NOTE
