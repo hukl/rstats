@@ -40,11 +40,15 @@ rstats:rpois(Lamda)                            % returns random sample from Pois
 rstats:rexp()                                  % returns random sample from Exponential Distribution
 rstats:rexp(Scale)                             % returns scaled random sample from Exponential Distribution
 rstats:rnormal(Mean, Sigma)                    % returns random sample from Normal Distribution
-rstats:rtruncnormal(N, Min, Max, Mean, Sd)     % returns N sample from truncated normal distribution
+rstats:rtruncnormal(Min, Max, Mean, Sd)        % returns a sample from truncated normal distribution
                                                % instead of Min/Max you can use the atom infinity
                                                % if both are infinity, the regular normal distribution is sampled
+rstats:rtruncnormal(N, Min, Max, Mean, Sd)     % returns n samples from truncated normal distribution
 rstats:dnorm(X, Mean, Sd)                      % Compute density of the normal distribution
-rstats:random_uniform(N, Min, Max)             % Returns N samples of uniform distribution within range (fast)
+rstats:random_uniform(Min, Max)                % Returns a sample (float) of uniform distribution within range (fast)
+rstats:random_uniform_integer(Min, Max)        % Returns a sample (integer) of uniform distribution within range (fast)
+rstats:random_uniform(N, Min, Max)             % Returns n samples (float) of uniform distribution within range (fast)
+rstats:random_uniform_integer(N, Min, Max)     % Returns n samples (integer) of uniform distribution within range (fast)
 rstats:walker_lookup_table([{Key, Weight}, …]) % Create Walker Choice Lookup Table
 rstats:walker_choice(LookupTable)              % Draw random sample from weighted distribution
 ```
@@ -87,6 +91,10 @@ plot(hist(rexp(1000000)))
 # NOTE
 
 I've included the original native C implementation of rpois in R which is licensed under the GNU General Public License
+
+# Further Optimizations
+
+* Exchange lists:seq with recursion
 
 # Contributors
 
