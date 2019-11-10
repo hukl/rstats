@@ -12,8 +12,6 @@
     walker_choice/1,
     ewa/2,
     ewa_next_state/3,
-    floor/1,
-    ceiling/1,
     fsign/2,
     fact/1,
     dnorm/1,
@@ -93,7 +91,7 @@ rpois(Mu) when Mu < 10.0 ->
 rpois(Mu) ->
     S    = math:sqrt(Mu),
     D    = 6.0 * Mu * Mu,
-    BigL = floor(Mu - 1.1484),
+    BigL = erlang:floor(Mu - 1.1484),
 
     step_n(S, D, Mu, BigL).
 
@@ -134,7 +132,7 @@ step_n(S, D, Mu, BigL) ->
     G = Mu + (S * rnormal(0, 1)),
 
     Pois = if
-        G >= 0.0 -> floor(G);
+        G >= 0.0 -> erlang:floor(G);
         true     -> -1
     end,
 
@@ -178,7 +176,7 @@ step_e(Pois, Mu, Fk, Difmuk, S, Omega, C, C0, C1, C2, C3) ->
 
 
 step_f0(_Pois, Mu, _Fk, _Difmuk, E, U, S, T, Omega, C, C0, C1, C2, C3) when -0.6744 < T ->
-    Pois   = floor(Mu + S * T),
+    Pois   = erlang:floor(Mu + S * T),
     Fk     = Pois,
     Difmuk = Mu - Fk,
     step_f1(Pois, Mu, Fk, Difmuk, E, U, S, Omega, C, C0, C1, C2, C3);
@@ -544,8 +542,8 @@ build_vectors([J | Short], [K | Long], Inx, Prob) ->
 
 
 walker_choice({walker_vectors, N, Keys, Inx, Prob}) ->
-    J = crypto:rand_uniform(0, N),
-    U = crypto:rand_uniform(0, 100) / 100,
+    J = random_uniform_integer(0, N),
+    U = random_uniform_integer(0, 100) / 100,
     Idx = case U =< array:get(J, Prob) of
               true -> J;
               false -> array:get(J, Inx)
@@ -571,25 +569,6 @@ ewa_next_state(Value, Alpha, State) ->
 seed() ->
     rand:seed(exs1024).
 
-
-floor(X) when X < 0 ->
-    T = trunc(X),
-    case X - T == 0 of
-        true -> T;
-        false -> T - 1
-    end;
-floor(X) ->
-    trunc(X).
-
-
-ceiling(X) when X < 0 ->
-    trunc(X);
-ceiling(X) ->
-    T = trunc(X),
-    case X - T == 0 of
-        true -> T;
-        false -> T + 1
-    end.
 
 fsign(X, Y) when Y >= 0 ->
     erlang:abs(X);

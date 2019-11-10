@@ -1,7 +1,8 @@
 {application, rstats, [
     {description, "Fast random sampling of normal, truncated normal, exponential, weighted and poisson distributions"},
-    {vsn, "1.0.2"},
+    {vsn, "1.0.3"},
     {maintainers, ["John-Paul Bader"]},
     {licenses, ["Apache"]},
-    {links, [{"Github", "https://github.com/hukl/rstats"}]}
+    {links, [{"Github", "https://github.com/hukl/rstats"}]},
+    {applications,[kernel, stdlib]}
 ]}.
