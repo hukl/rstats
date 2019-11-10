@@ -590,7 +590,7 @@ random_uniform(Min, Max) ->
     Number.
 
 random_uniform(N, Min, Max) when Min < Max ->
-    State = rand:seed_s(exsplus),
+    State = rand:seed_s(exsss),
     random_uniform(N, Min, Max, State, []).
 
 random_uniform(0, _Min, _Max, _State, Acc) ->
@@ -607,7 +607,7 @@ random_uniform_integer(Min, Max) ->
     Number.
 
 random_uniform_integer(N, Min, Max) when Min < Max ->
-    State = rand:seed_s(exsplus),
+    State = rand:seed_s(exsss),
     random_uniform_integer(N, Min, Max, State, []).
 
 random_uniform_integer(0, _Min, _Max, _State, Acc) ->
